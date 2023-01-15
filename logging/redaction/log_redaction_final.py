@@ -76,7 +76,7 @@ class BatchPayloads(CombineFn):
     return accumulator
 
 
-class LogRedaction(beam.DoFn):
+class LogRedaction(DoFn):
   '''Apply inspection and redaction to textPayload field of log entries'''
 
   def __init__(self, project_id: str):
@@ -180,7 +180,7 @@ def run(pubsub_subscription: str,
     # Optimize Google API consumption and avoid possible throttling
     # by calling APIs for batched data and not per each element
     | 'Batch aggregated payloads' >> CombineGlobally(BatchPayloads()).without_defaults()
-    | 'Redact SSN info from logs' >> ParDo(LogRedaction(destination_log_name,split('/')[1]))
+    | 'Redact SSN info from logs' >> ParDo(LogRedaction(destination_log_name.split('/')[1]))
     | 'Ingest to output log' >> ParDo(IngestLogs(destination_log_name))
   )
   pipeline.run()
